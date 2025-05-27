@@ -67,7 +67,7 @@ const Home = () => {
               ))}
             </TextField>
             </Tooltip>
-            <Tooltip title="How many nearest chuncks are included as context">
+            <Tooltip title="How many nearest chuncks are included as">
             <TextField
               label="Number of Nearest Chunks"
               type="number"
