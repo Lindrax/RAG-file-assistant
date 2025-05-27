@@ -2,6 +2,31 @@ from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from sentence_transformers import SentenceTransformer
 import faiss, os, requests
+import pickle
+
+INDEX_PATH = "data/faiss.index"
+CHUNKS_PATH = "data/chunks.pkl"
+
+def save_state():
+    faiss.write_index(index, INDEX_PATH)
+    with open(CHUNKS_PATH, "wb") as f:
+        pickle.dump((chunks, chunk_files), f)
+
+def load_state():
+    global index, chunks, chunk_files
+    if os.path.exists(INDEX_PATH):
+        index = faiss.read_index(INDEX_PATH)
+    if os.path.exists(CHUNKS_PATH):
+        with open(CHUNKS_PATH, "rb") as f:
+            loaded_chunks, loaded_chunk_files = pickle.load(f)
+            chunks.clear()
+            chunks.extend(loaded_chunks)
+            chunk_files.clear()
+            chunk_files.extend(loaded_chunk_files)
+
+# Load state at startup
+load_state()
+
 
 app = FastAPI()
 
@@ -30,7 +55,7 @@ async def upload(files: list[UploadFile] = File(...), chunk_size: int = Form(250
         index.add(vectors)
         chunks.extend(doc_chunks)
         chunk_files.extend([file.filename] * len(doc_chunks))
-    
+    save_state()  # Save after upload
     return {"status": "uploaded", "files": len(files), "total_chunks": len(chunks)}
 
 @app.post("/chat")
