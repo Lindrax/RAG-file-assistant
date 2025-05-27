@@ -1,10 +1,23 @@
 import { useState } from "react";
 import axios from "axios";
+import {
+  Container,
+  Typography,
+  Button,
+  Box,
+  TextField,
+  CircularProgress,
+  Paper,
+  Stack,
+} from "@mui/material";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import SendIcon from "@mui/icons-material/Send";
 
 const App = () => {
   const [files, setFiles] = useState([]);
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const uploadFiles = async () => {
     const formData = new FormData();
@@ -16,36 +29,85 @@ const App = () => {
   };
 
   const ask = async () => {
+    setLoading(true);
+    setResponse("");
     const formData = new FormData();
     formData.append("prompt", prompt);
-    const res = await axios.post("http://localhost:8000/chat", formData);
-    setResponse(res.data.answer);
+    try {
+      const res = await axios.post("http://localhost:8000/chat", formData);
+      setResponse(res.data.answer);
+    } catch (e) {
+      setResponse("Error: Could not get answer.", e);
+    }
+    setLoading(false);
   };
 
   return (
-    <div>
-      <h1 >RAG File Assistant</h1>
-      <input type="file" 
-        multiple 
-        onChange={e => setFiles(Array.from(e.target.files))} />
-      <button onClick={uploadFiles}>Upload</button>
-      <div>
-        <input
-         
-          value={prompt}
-          onChange={e => setPrompt(e.target.value)}
-          placeholder="Ask a question about your files..."
-        />
-        <button onClick={ask}>Ask</button>
-      </div>
-      <div>
-        <strong>Response:</strong>
-        <p>{response}</p>
-      </div>
-    </div>
+    <Container maxWidth="sm" sx={{ mt: 4 }}>
+      <Paper elevation={3} sx={{ p: 4 }}>
+        <Typography variant="h4" align="center" gutterBottom>
+          RAG File Assistant
+        </Typography>
+        <Stack spacing={2}>
+          <Button
+            variant="contained"
+            component="label"
+            startIcon={<UploadFileIcon />}
+          >
+            Select Files
+            <input
+              type="file"
+              hidden
+              multiple
+              onChange={e => setFiles(Array.from(e.target.files))}
+            />
+          </Button>
+          <Typography variant="body2" color="text.secondary">
+            {files.length > 0
+              ? `${files.length} file(s) selected`
+              : "No files selected"}
+          </Typography>
+          <Button
+            variant="outlined"
+            onClick={uploadFiles}
+            disabled={files.length === 0}
+          >
+            Upload
+          </Button>
+          <TextField
+            label="Ask a question about your files..."
+            value={prompt}
+            onChange={e => setPrompt(e.target.value)}
+            fullWidth
+            multiline
+            minRows={2}
+          />
+          <Button
+            variant="contained"
+            endIcon={<SendIcon />}
+            onClick={ask}
+            disabled={!prompt || loading}
+          >
+            Ask
+          </Button>
+          <Box minHeight={80} display="flex" alignItems="center" justifyContent="center">
+            {loading ? (
+              <CircularProgress />
+            ) : (
+              response && (
+                <Paper elevation={1} sx={{ p: 2, width: "100%" }}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Response:
+                  </Typography>
+                  <Typography variant="body1">{response}</Typography>
+                </Paper>
+              )
+            )}
+          </Box>
+        </Stack>
+      </Paper>
+    </Container>
   );
-}
+};
 
-
-
-export default App
+export default App;
