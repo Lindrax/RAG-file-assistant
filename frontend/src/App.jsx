@@ -17,6 +17,7 @@ const App = () => {
   const [files, setFiles] = useState([]);
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
+  const [contextFiles, setContextFiles] = useState([])
   const [loading, setLoading] = useState(false);
 
   const uploadFiles = async () => {
@@ -36,6 +37,7 @@ const App = () => {
     try {
       const res = await axios.post("http://localhost:8000/chat", formData);
       setResponse(res.data.answer);
+      setContextFiles(res.data.contextFiles || [])
     } catch (e) {
       setResponse("Error: Could not get answer.", e);
     }
@@ -100,6 +102,13 @@ const App = () => {
                     Response:
                   </Typography>
                   <Typography variant="body1">{response}</Typography>
+                  {contextFiles.length > 0 && (
+                    <Box mt={2}>
+                      <Typography variant="caption" color="text.secondary">
+                        Context from file(s): {contextFiles.join(", ")}
+                      </Typography>
+                    </Box>
+                  )}
                 </Paper>
               )
             )}

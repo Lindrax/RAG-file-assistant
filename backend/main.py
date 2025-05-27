@@ -17,16 +17,18 @@ model = SentenceTransformer('all-MiniLM-L6-v2')
 
 # Create FAISS index
 index = faiss.IndexFlatL2(384)
-chunks = []  # In-memory list of text chunks
+chunks = []
+chunk_files = []
 
 @app.post("/upload")
-async def upload(files: list[UploadFile] = File(...)): # Changed to accept list
+async def upload(files: list[UploadFile] = File(...)):
     for file in files:
         text = (await file.read()).decode("utf-8")
         doc_chunks = [text[i:i+250] for i in range(0, len(text), 250)]
         vectors = model.encode(doc_chunks)
         index.add(vectors)
         chunks.extend(doc_chunks)
+        chunk_files.extend([file.filename] * len(doc_chunks))
     
     return {"status": "uploaded", "files": len(files), "total_chunks": len(chunks)}
 
@@ -35,6 +37,7 @@ async def chat(prompt: str = Form(...)):
     query_vec = model.encode([prompt])
     D, I = index.search(query_vec, k=2)
     relevant_chunks = [chunks[i] for i in I[0]]
+    relevant_files = [chunk_files[i] for i in I[0]]
     context = "\n\n".join(relevant_chunks)
     
     prompt_with_context = f"Context:\n{context}\n\nQuestion: {prompt}\nAnswer:"
@@ -46,7 +49,9 @@ async def chat(prompt: str = Form(...)):
         "stream": False
     })
     response = res.json().get("response", "No answer")
-    return {"answer": response.strip()}
+    return {"answer": response.strip(),
+            "contextFiles": list(set(relevant_files))
+            }
 
 @app.get("/")
 async def root():
