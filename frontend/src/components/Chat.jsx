@@ -12,8 +12,11 @@ import {
 } from "@mui/material";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import SendIcon from "@mui/icons-material/Send";
+import { useLocation } from "react-router-dom";
 
 const Chat = () => {
+  const location = useLocation();
+  const { chunkSize = 250, llmModel = "tinyllama", numChunks = 5 } = location.state || {};
   const [files, setFiles] = useState([]);
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
@@ -25,6 +28,7 @@ const Chat = () => {
     for (let file of files) {
       formData.append("files", file);
     }
+    formData.append("chunk_size", chunkSize)
     await axios.post("http://localhost:8000/upload", formData);
     alert(`Uploaded ${files.length} files successfully`);
   };
@@ -34,6 +38,8 @@ const Chat = () => {
     setResponse("");
     const formData = new FormData();
     formData.append("prompt", prompt);
+    formData.append("llm_model", llmModel);
+    formData.append("num_chunks", numChunks);
     try {
       const res = await axios.post("http://localhost:8000/chat", formData);
       setResponse(res.data.answer);

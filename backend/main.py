@@ -21,10 +21,11 @@ chunks = []
 chunk_files = []
 
 @app.post("/upload")
-async def upload(files: list[UploadFile] = File(...)):
+async def upload(files: list[UploadFile] = File(...), chunk_size: int = Form(250)):
+    print(chunk_size)
     for file in files:
         text = (await file.read()).decode("utf-8")
-        doc_chunks = [text[i:i+250] for i in range(0, len(text), 250)]
+        doc_chunks = [text[i:i+250] for i in range(0, len(text), chunk_size)]
         vectors = model.encode(doc_chunks)
         index.add(vectors)
         chunks.extend(doc_chunks)
@@ -33,9 +34,9 @@ async def upload(files: list[UploadFile] = File(...)):
     return {"status": "uploaded", "files": len(files), "total_chunks": len(chunks)}
 
 @app.post("/chat")
-async def chat(prompt: str = Form(...)):
+async def chat(prompt: str = Form(...), llm_model: str = Form("tinyllama"), num_chunks: int = Form(5)):
     query_vec = model.encode([prompt])
-    D, I = index.search(query_vec, k=5)
+    D, I = index.search(query_vec, k=num_chunks)
     relevant_chunks = [chunks[i] for i in I[0]]
     relevant_files = [chunk_files[i] for i in I[0]]
     context = "\n\n".join(relevant_chunks)
@@ -44,7 +45,7 @@ async def chat(prompt: str = Form(...)):
     print(prompt_with_context)
 
     res = requests.post("http://localhost:11434/api/generate", json={
-        "model": "tinyllama",
+        "model": llm_model,
         "prompt": prompt_with_context,
         "stream": False
     })
