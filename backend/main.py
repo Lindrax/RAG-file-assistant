@@ -35,7 +35,7 @@ async def upload(files: list[UploadFile] = File(...)):
 @app.post("/chat")
 async def chat(prompt: str = Form(...)):
     query_vec = model.encode([prompt])
-    D, I = index.search(query_vec, k=2)
+    D, I = index.search(query_vec, k=5)
     relevant_chunks = [chunks[i] for i in I[0]]
     relevant_files = [chunk_files[i] for i in I[0]]
     context = "\n\n".join(relevant_chunks)
