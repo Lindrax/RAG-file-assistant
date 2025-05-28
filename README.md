@@ -13,6 +13,8 @@ The app has some files downloaded already and you can download your own files
 ![image](https://github.com/user-attachments/assets/04297993-f32a-4ba2-a93c-ee0cbe081035)
 ![image](https://github.com/user-attachments/assets/0a20ef0e-c0c7-4915-87c5-765a8dab01fd)
 ![image](https://github.com/user-attachments/assets/a02996e2-1530-4bc4-8765-3afdf4705edd)
+![image](https://github.com/user-attachments/assets/5fc036a2-8e88-480c-99e7-43a0a7db6e17)
+
 
 ---
 
