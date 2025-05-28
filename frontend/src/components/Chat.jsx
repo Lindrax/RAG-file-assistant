@@ -76,7 +76,7 @@ const Chat = () => {
               : "No files selected"}
           </Typography>
           <Button
-            variant="outlined"
+            variant={files.length > 0 ? "contained" : "outlined"}
             onClick={uploadFiles}
             disabled={files.length === 0}
           >

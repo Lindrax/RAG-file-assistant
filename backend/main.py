@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sentence_transformers import SentenceTransformer
 import faiss, os, requests
 import pickle
+import fitz
 
 INDEX_PATH = "data/faiss.index"
 CHUNKS_PATH = "data/chunks.pkl"
@@ -22,6 +23,13 @@ model = SentenceTransformer('all-MiniLM-L6-v2')
 index = faiss.IndexFlatL2(384)
 chunks = []
 chunk_files = []
+
+def extract_text_from_pdf(file):
+    text = ""
+    with fitz.open(stream=file, filetype="pdf") as doc:
+        for page in doc:
+            text += page.get_text()
+    return text
 
 def save_state():
     faiss.write_index(index, INDEX_PATH)
@@ -44,14 +52,21 @@ load_state()
 
 @app.post("/upload")
 async def upload(files: list[UploadFile] = File(...), chunk_size: int = Form(250)):
-    print(chunk_size)
     for file in files:
-        text = (await file.read()).decode("utf-8")
+        filename = file.filename
+        content = await file.read()
+
+        if filename.lower().endswith(".pdf"):
+            text = extract_text_from_pdf(content)
+        else:
+            text = content.decode("utf-8")
+
         doc_chunks = [text[i:i+250] for i in range(0, len(text), chunk_size)]
         vectors = model.encode(doc_chunks)
         index.add(vectors)
         chunks.extend(doc_chunks)
         chunk_files.extend([file.filename] * len(doc_chunks))
+
     save_state()
     return {"status": "uploaded", "files": len(files), "total_chunks": len(chunks)}
 
@@ -66,7 +81,7 @@ async def chat(prompt: str = Form(...), llm_model: str = Form("tinyllama"), num_
     prompt_with_context = f"Context:\n{context}\n\nQuestion: {prompt}\nAnswer:"
     print(prompt_with_context)
 
-    res = requests.post("http://ollama:11434/api/generate", json={
+    res = requests.post("http://localhost:11434/api/generate", json={
         "model": llm_model,
         "prompt": prompt_with_context,
         "stream": False
