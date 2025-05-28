@@ -8,11 +8,12 @@ import fitz
 from collections import Counter
 import numpy as np
 
+#Define file paths for index and chunk data
 INDEX_PATH = "data/faiss.index"
 CHUNKS_PATH = "data/chunks.pkl"
 
 app = FastAPI()
-
+#allow cross-origin requests
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,13 +21,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+#Transformer for embeddings
 model = SentenceTransformer('all-MiniLM-L6-v2')
-
+#FAISS index for vector storage
 index = faiss.IndexFlatL2(384)
 chunks = []
 chunk_files = []
 
+#Extract text from pdf files
 def extract_text_from_pdf(file):
     text = ""
     with fitz.open(stream=file, filetype="pdf") as doc:
@@ -34,11 +36,13 @@ def extract_text_from_pdf(file):
             text += page.get_text()
     return text
 
+#Saves the FAISS index and chunk data to disk
 def save_state():
     faiss.write_index(index, INDEX_PATH)
     with open(CHUNKS_PATH, "wb") as f:
         pickle.dump((chunks, chunk_files), f)
 
+"Loads the FAISS index and chunk data from disk if availeble"
 def load_state():
     global index, chunks, chunk_files
     if os.path.exists(INDEX_PATH):
@@ -51,6 +55,7 @@ def load_state():
             chunk_files.clear()
             chunk_files.extend(loaded_chunk_files)
 
+#Load state at startup
 load_state()
 
 @app.post("/upload")
@@ -59,6 +64,7 @@ async def upload(files: list[UploadFile] = File(...), chunk_size: int = Form(500
     for file in files:
         filename = file.filename
         content = await file.read()
+        #Save upload file for future re-chunking
         with open(os.path.join("uploaded_files", filename), "wb") as f:
             f.write(content)
 
@@ -67,6 +73,7 @@ async def upload(files: list[UploadFile] = File(...), chunk_size: int = Form(500
         else:
             text = content.decode("utf-8")
 
+        #chunk text and embed them into the index
         doc_chunks = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
         vectors = model.encode(doc_chunks)
         index.add(vectors)
@@ -115,6 +122,7 @@ async def list_files():
     file_counts = Counter(chunk_files)
     return [{"filename": fn, "chunks": count} for fn, count in file_counts.items()]
 
+#Delete all chunks and vectors associated with a file, and remove the file from disk.
 @app.delete("/files/{filename}")
 async def delete_file(filename: str):
     global chunks, chunk_files, index
@@ -142,6 +150,7 @@ async def delete_file(filename: str):
     save_state()
     return {"status": "deleted", "file": filename}
 
+#Re-chunk and re-embed all stored files with a new chunk size.
 @app.post("/rechunk")
 async def rechunk(chunk_size: int = Form(...)):
     global chunks, chunk_files, index
@@ -164,6 +173,7 @@ async def rechunk(chunk_size: int = Form(...)):
         chunks.extend(doc_chunks)
         chunk_files.extend([file] * len(doc_chunks))
 
+#Return file content as text
 @app.get("/files/{filename}")
 async def get_file_content(filename: str):
     path = os.path.join("uploaded_files", filename)
