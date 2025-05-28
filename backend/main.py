@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 from sentence_transformers import SentenceTransformer
 import faiss, os, requests
 import pickle
@@ -97,7 +98,7 @@ async def chat(prompt: str = Form(...), llm_model: str = Form("tinyllama"), num_
     prompt_with_context = f"Context:\n{context}\n\nQuestion: {prompt}\nAnswer:"
     print(prompt_with_context)
 
-    res = requests.post("http://localhost:11434/api/generate", json={
+    res = requests.post("http://ollama:11434/api/generate", json={
         "model": llm_model,
         "prompt": prompt_with_context,
         "stream": False
@@ -162,6 +163,21 @@ async def rechunk(chunk_size: int = Form(...)):
         index.add(vectors)
         chunks.extend(doc_chunks)
         chunk_files.extend([file] * len(doc_chunks))
+
+@app.get("/files/{filename}")
+async def get_file_content(filename: str):
+    path = os.path.join("uploaded_files", filename)
+    if not os.path.exists(path):
+        return PlainTextResponse("File not found", status_code=404)
+    if filename.lower().endswith(".pdf"):
+        with open(path, "rb") as f:
+            content = f.read()
+        text = extract_text_from_pdf(content)
+        print(text)
+        return PlainTextResponse(text)
+    else:
+        with open(path, "r", encoding="utf-8") as f:
+            return PlainTextResponse(f.read())
 
 @app.get("/")
 async def root():

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
   Paper,
@@ -7,15 +7,22 @@ import {
   List,
   ListItem,
   ListItemText,
-  SecondaryAction,
   Box,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 
 const FileManager = () => {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewContent, setViewContent] = useState("");
+  const [viewFilename, setViewFilename] = useState("");
 
   const fetchFiles = async () => {
     setLoading(true);
@@ -32,6 +39,20 @@ const FileManager = () => {
     if (!window.confirm(`Delete file "${filename}" and all its chunks?`)) return;
     await axios.delete(`http://localhost:8000/files/${filename}`);
     fetchFiles();
+  };
+
+  const handleView = async (filename) => {
+    setViewFilename(filename);
+    setViewContent("Loading...");
+    setViewOpen(true);
+    try {
+      const res = await axios.get(
+        `http://localhost:8000/files/${filename}`
+      );
+      setViewContent(res.data);
+    } catch (e) {
+      setViewContent("Could not load file content.", e);
+    }
   };
 
   return (
@@ -51,7 +72,15 @@ const FileManager = () => {
                 primary={file.filename}
                 secondary={`Chunks: ${file.chunks}`}
               />
-              <SecondaryAction>
+              <Box sx={{ ml: "auto", display: "flex", gap: 1 }}>
+                <IconButton
+                  edge="end"
+                  aria-label="view"
+                  color="black"
+                  onClick={() => handleView(file.filename)}
+                >
+                  <VisibilityIcon />
+                </IconButton>
                 <IconButton
                   edge="end"
                   aria-label="delete"
@@ -60,7 +89,7 @@ const FileManager = () => {
                 >
                   <DeleteIcon />
                 </IconButton>
-              </SecondaryAction>
+              </Box>
             </ListItem>
           ))}
         </List>
@@ -70,6 +99,25 @@ const FileManager = () => {
           Refresh
         </Button>
       </Box>
+      <Dialog
+        open={viewOpen}
+        onClose={() => setViewOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Viewing: {viewFilename}</DialogTitle>
+        <DialogContent dividers>
+          <Typography
+            variant="body2"
+            sx={{ whiteSpace: "pre-wrap", fontFamily: "monospace" }}
+          >
+            {viewContent}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setViewOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 };
