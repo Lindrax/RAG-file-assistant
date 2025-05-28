@@ -4,6 +4,8 @@ from sentence_transformers import SentenceTransformer
 import faiss, os, requests
 import pickle
 import fitz
+from collections import Counter
+import numpy as np
 
 INDEX_PATH = "data/faiss.index"
 CHUNKS_PATH = "data/chunks.pkl"
@@ -74,8 +76,19 @@ async def upload(files: list[UploadFile] = File(...), chunk_size: int = Form(250
 async def chat(prompt: str = Form(...), llm_model: str = Form("tinyllama"), num_chunks: int = Form(5)):
     query_vec = model.encode([prompt])
     D, I = index.search(query_vec, k=num_chunks)
-    relevant_chunks = [chunks[i] for i in I[0]]
-    relevant_files = [chunk_files[i] for i in I[0]]
+
+    relevant_chunks = []
+    sources = []
+    for i in I[0]:
+        chunk_text = chunks[int(i)]
+        file = chunk_files[int(i)]
+        sources.append({
+            "chunk": chunk_text,
+            "file": file,
+            "index": int(i)
+        })
+        relevant_chunks.append(chunk_text)
+
     context = "\n\n".join(relevant_chunks)
     
     prompt_with_context = f"Context:\n{context}\n\nQuestion: {prompt}\nAnswer:"
@@ -86,10 +99,41 @@ async def chat(prompt: str = Form(...), llm_model: str = Form("tinyllama"), num_
         "prompt": prompt_with_context,
         "stream": False
     })
+
     response = res.json().get("response", "No answer")
+
     return {"answer": response.strip(),
-            "contextFiles": list(set(relevant_files))
+            "sources": sources
             }
+
+@app.get("/files")
+async def list_files():
+    file_counts = Counter(chunk_files)
+    return [{"filename": fn, "chunks": count} for fn, count in file_counts.items()]
+
+@app.delete("/files/{filename}")
+async def delete_file(filename: str):
+    global chunks, chunk_files, index
+    new_chunks = []
+    new_chunk_files = []
+    new_vectors = []
+
+    for i, (chunk, file) in enumerate(zip(chunks, chunk_files)):
+        if file != filename:
+            new_chunks.append(chunk)
+            new_chunk_files.append(file)
+            new_vectors.append(index.reconstruct(i))
+
+    index.reset()
+    if new_vectors:
+        index.add(np.array(new_vectors))
+
+    chunks[:] = new_chunks
+    chunk_files[:] = new_chunk_files
+
+    save_state()
+    return {"status": "deleted", "file": filename}
+
 
 @app.get("/")
 async def root():

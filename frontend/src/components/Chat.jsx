@@ -20,7 +20,7 @@ const Chat = () => {
   const [files, setFiles] = useState([]);
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
-  const [contextFiles, setContextFiles] = useState([])
+  const [sources, setSources] = useState([])
   const [loading, setLoading] = useState(false);
 
   const uploadFiles = async () => {
@@ -43,7 +43,8 @@ const Chat = () => {
     try {
       const res = await axios.post("http://localhost:8000/chat", formData);
       setResponse(res.data.answer);
-      setContextFiles(res.data.contextFiles || [])
+      console.log(res.data.sources)
+      setSources(res.data.sources || [])
     } catch (e) {
       setResponse("Error: Could not get answer.", e);
     }
@@ -108,11 +109,26 @@ const Chat = () => {
                     Response:
                   </Typography>
                   <Typography variant="body1">{response}</Typography>
-                  {contextFiles.length > 0 && (
+                  {sources.length > 0 && (
                     <Box mt={2}>
-                      <Typography variant="caption" color="text.secondary">
-                        Context from file(s): {contextFiles.join(", ")}
+                      <Typography variant="subtitle2" gutterBottom>
+                        Retrieved Chunks:
                       </Typography>
+                      <Stack spacing={2}>
+                        {sources.map((src, i) => (
+                          <Paper key={i} elevation={1} sx={{ p: 1, backgroundColor: "#f9f9f9" }}>
+                            <Typography variant="caption" color="text.secondary">
+                              File: <strong>{src.file}</strong> — Chunk #{src.index}
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              sx={{ whiteSpace: "pre-wrap", mt: 0.5 }}
+                            >
+                              {src.chunk}
+                            </Typography>
+                          </Paper>
+                        ))}
+                      </Stack>
                     </Box>
                   )}
                 </Paper>
