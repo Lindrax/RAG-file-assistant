@@ -16,7 +16,7 @@ import { useLocation } from "react-router-dom";
 
 const Chat = () => {
   const location = useLocation();
-  const { chunkSize = 250, llmModel = "tinyllama", numChunks = 5 } = location.state || {};
+  const { chunkSize = 500, llmModel = "tinyllama", numChunks = 5 } = location.state || {};
   const [files, setFiles] = useState([]);
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");

@@ -2,6 +2,7 @@ import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 import Chat from "./components/Chat";
 import Home from "./components/Home";
 import { AppBar, Toolbar, Typography, Button, Box, createTheme, ThemeProvider, CssBaseline } from "@mui/material";
+import FileManager from "./components/FileManager";
 
 const theme = createTheme({
   palette: {
@@ -49,12 +50,16 @@ const App = () => {
               <Button color="inherit" component={Link} to="/chat">
                 Chat
               </Button>
+              <Button color="inherit" component={Link} to="/files">
+                Files
+              </Button>
             </Box>
           </Toolbar>
         </AppBar>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/chat" element={<Chat />} />
+          <Route path="/files" element={<FileManager />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

@@ -11,6 +11,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { useState } from "react";
+import axios from "axios"
 
 const llmModels = [
   { value: "tinyllama", label: "TinyLlama" },
@@ -19,12 +20,12 @@ const llmModels = [
 ]
 
 const Home = () => {
-  const [chunkSize, setChunkSize] = useState(250)
+  const [chunkSize, setChunkSize] = useState(500)
   const [llmModel, setLlmModel] = useState("tinyllama")
   const [numChunks, setNumChunks] = useState(5)
   const navigate = useNavigate()
 
-  const handleGoToChat = () => {
+  const handleGoToChat = async() => {
     navigate("/chat", {
       state: {chunkSize, llmModel, numChunks}
     })
@@ -52,6 +53,18 @@ const Home = () => {
               fullWidth
             />
             </Tooltip>
+            <Button
+            variant={chunkSize == 500 ?"outlined" :"contained"}
+            sx={{ mt: 1 }}
+            onClick={async () => {
+              const formData = new FormData();
+              formData.append("chunk_size", chunkSize);
+              await axios.post("http://localhost:8000/rechunk", formData);
+              alert(`Re-chunked all files with chunk size ${chunkSize}`);
+            }}
+          >
+            Re-chunk All Files
+          </Button>
             <Tooltip title="What language model to use">
             <TextField
               select

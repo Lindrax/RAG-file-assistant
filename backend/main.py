@@ -53,17 +53,20 @@ def load_state():
 load_state()
 
 @app.post("/upload")
-async def upload(files: list[UploadFile] = File(...), chunk_size: int = Form(250)):
+async def upload(files: list[UploadFile] = File(...), chunk_size: int = Form(500)):
+    os.makedirs("uploaded_files", exist_ok=True)
     for file in files:
         filename = file.filename
         content = await file.read()
+        with open(os.path.join("uploaded_files", filename), "wb") as f:
+            f.write(content)
 
         if filename.lower().endswith(".pdf"):
             text = extract_text_from_pdf(content)
         else:
             text = content.decode("utf-8")
 
-        doc_chunks = [text[i:i+250] for i in range(0, len(text), chunk_size)]
+        doc_chunks = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
         vectors = model.encode(doc_chunks)
         index.add(vectors)
         chunks.extend(doc_chunks)
@@ -131,9 +134,34 @@ async def delete_file(filename: str):
     chunks[:] = new_chunks
     chunk_files[:] = new_chunk_files
 
+    file_path = os.path.join("uploaded_files", filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
     save_state()
     return {"status": "deleted", "file": filename}
 
+@app.post("/rechunk")
+async def rechunk(chunk_size: int = Form(...)):
+    global chunks, chunk_files, index
+
+    index.reset()
+    chunks.clear()
+    chunk_files.clear()
+    for file in os.listdir("uploaded_files"):
+        path = os.path.join("uploaded_files", file)
+        if file.lower().endswith(".pdf"):
+            with open(path, "rb") as f:
+                text = extract_text_from_pdf(f.read())
+        else:
+            with open(path, "r", encoding="utf-8") as f:
+                text = f.read()
+            
+        doc_chunks = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+        vectors = model.encode(doc_chunks)
+        index.add(vectors)
+        chunks.extend(doc_chunks)
+        chunk_files.extend([file] * len(doc_chunks))
 
 @app.get("/")
 async def root():
