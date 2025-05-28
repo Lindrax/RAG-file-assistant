@@ -4,19 +4,15 @@
 
 **RAG-file-assistant** is a Retrieval-Augmented Generation (RAG) assistant that lets you upload documents (PDFs or text files), chunk and embed their content, and ask questions about them using language models such as TinyLlama, Llama 2, and Mistral. The system uses semantic search (FAISS), chunked document storage, and a local LLM server (Ollama) to provide accurate, context-aware answers and file management features.
 
-The app has some ready downloaded data, and you can download your own files
+The app has some files downloaded already and you can download your own files
 
 ---
----
+
 ##Screenshots
 ![image](https://github.com/user-attachments/assets/ac5cd87a-80ee-4846-b5ea-fbddd4d99305)
 ![image](https://github.com/user-attachments/assets/04297993-f32a-4ba2-a93c-ee0cbe081035)
 ![image](https://github.com/user-attachments/assets/0a20ef0e-c0c7-4915-87c5-765a8dab01fd)
 ![image](https://github.com/user-attachments/assets/a02996e2-1530-4bc4-8765-3afdf4705edd)
-
-
-
-
 
 ---
 
