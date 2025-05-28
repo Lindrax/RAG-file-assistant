@@ -1,0 +1,28 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - '8000:8000'
+    volumes:
+      - ./backend:/app
+  frontend:
+    build: ./frontend
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - backend
+
+  ollama:
+    build:
+      context: ./ollama
+      dockerfile: Dockerfile
+    ports:
+      - 11435:11434
+    volumes:
+      - ollama-data:/root/.ollama
+    entrypoint: ['/usr/bin/bash', 'pull-llama.sh']
+
+volumes:
+  ollama-data:

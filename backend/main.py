@@ -7,6 +7,22 @@ import pickle
 INDEX_PATH = "data/faiss.index"
 CHUNKS_PATH = "data/chunks.pkl"
 
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+model = SentenceTransformer('all-MiniLM-L6-v2')
+
+index = faiss.IndexFlatL2(384)
+chunks = []
+chunk_files = []
+
 def save_state():
     faiss.write_index(index, INDEX_PATH)
     with open(CHUNKS_PATH, "wb") as f:
@@ -24,26 +40,7 @@ def load_state():
             chunk_files.clear()
             chunk_files.extend(loaded_chunk_files)
 
-# Load state at startup
 load_state()
-
-
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-model = SentenceTransformer('all-MiniLM-L6-v2')
-
-# Create FAISS index
-index = faiss.IndexFlatL2(384)
-chunks = []
-chunk_files = []
 
 @app.post("/upload")
 async def upload(files: list[UploadFile] = File(...), chunk_size: int = Form(250)):
@@ -55,7 +52,7 @@ async def upload(files: list[UploadFile] = File(...), chunk_size: int = Form(250
         index.add(vectors)
         chunks.extend(doc_chunks)
         chunk_files.extend([file.filename] * len(doc_chunks))
-    save_state()  # Save after upload
+    save_state()
     return {"status": "uploaded", "files": len(files), "total_chunks": len(chunks)}
 
 @app.post("/chat")
@@ -69,7 +66,7 @@ async def chat(prompt: str = Form(...), llm_model: str = Form("tinyllama"), num_
     prompt_with_context = f"Context:\n{context}\n\nQuestion: {prompt}\nAnswer:"
     print(prompt_with_context)
 
-    res = requests.post("http://localhost:11434/api/generate", json={
+    res = requests.post("http://ollama:11434/api/generate", json={
         "model": llm_model,
         "prompt": prompt_with_context,
         "stream": False
