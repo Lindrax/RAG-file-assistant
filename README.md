@@ -9,11 +9,17 @@ The app has some files downloaded already and you can download your own files
 ---
 
 ## Screenshots
-![image](https://github.com/user-attachments/assets/ac5cd87a-80ee-4846-b5ea-fbddd4d99305)
-![image](https://github.com/user-attachments/assets/04297993-f32a-4ba2-a93c-ee0cbe081035)
-![image](https://github.com/user-attachments/assets/0a20ef0e-c0c7-4915-87c5-765a8dab01fd)
-![image](https://github.com/user-attachments/assets/a02996e2-1530-4bc4-8765-3afdf4705edd)
-![image](https://github.com/user-attachments/assets/5fc036a2-8e88-480c-99e7-43a0a7db6e17)
+Chat interface:
+![image](https://github.com/user-attachments/assets/887b1480-4271-4b61-860e-1ba0a2a35db0)
+Context list:
+![image](https://github.com/user-attachments/assets/ab4f2388-564c-4567-88ea-5569679ed141)
+Home page:
+![image](https://github.com/user-attachments/assets/5283834a-86b7-41b7-80e8-97fe3ae62bfc)
+File list:
+![image](https://github.com/user-attachments/assets/45ac1196-3b06-4198-b1d0-bb41e012854a)
+File preview:
+![image](https://github.com/user-attachments/assets/fd4a8ce7-12ee-44fa-9469-2d5405695d87)
+
 
 
 ---
